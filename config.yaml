@@ -1,15 +1,15 @@
-name: Lovelace Kindle Screensaver
-version: 1.0.11
-slug: kindle-screensaver
-description: This tool can be used to display a Lovelace view of your Home Assistant instance on a jailbroken Kindle device. It regularly takes a screenshot which can be polled and used as a screensaver image of the online screensaver plugin.
+name: Dashboard Image Renderer
+version: 1.0.0
+slug: dashboard-image-renderer
+description: This addon renders an image of a Home Assistant Lovelace dashboard and serves it over HTTP.
 startup: application
 boot: auto
 arch:
   - aarch64
   - amd64
   - armv7
-url: 'https://github.com/sibbl/hass-lovelace-kindle-screensaver'
-image: 'sibbl/hass-lovelace-kindle-screensaver-ha-addon-{arch}'
+url: 'https://github.com/iclanton/hass-dashboard-renderer'
+image: 'iclanton/hass-dashboard-renderer-ha-addon-{arch}'
 webui: 'http://[HOST]:[PORT:5000]'
 ingress: true
 ingress_port: 5000

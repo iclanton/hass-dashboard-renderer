@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   app:
-    image: sibbl/hass-lovelace-kindle-screensaver:latest
+    image: iclanton/hass-dashboard-renderer:latest
     environment:
       - HA_BASE_URL=https://your-path-to-home-assistant:8123
       - HA_SCREENSHOT_URL=/lovelace?kiosk
