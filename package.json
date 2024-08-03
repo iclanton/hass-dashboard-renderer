@@ -1,12 +1,12 @@
 {
-  "name": "hass-lovelace-kindle-screensaver",
+  "name": "hass-dashboard-renderer",
   "version": "1.0.11",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "sibbl",
+  "author": "iclanton",
   "license": "MIT",
   "dependencies": {
     "cron": "^1.8.2",
