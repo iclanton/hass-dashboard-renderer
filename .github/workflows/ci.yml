@@ -3,9 +3,35 @@ name: ci
 on:
   push:
     tags: [ 'v*.*.*' ]
-
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 jobs:
-  multi:
+  build:
+    strategy:
+      matrix:
+        include:
+          - displayName: 'Default'
+            platforms: linux/amd64,linux/arm/v7,linux/arm64
+            buildArgs: ''
+            tagSuffix: ''
+            dockerfile: './Dockerfile'
+          - displayName: 'HA-AMD64'
+            platforms: 'linux/amd64'
+            buildArgs: 'BUILD_FROM=homeassistant/amd64-base:latest'
+            tagSuffix: '-ha-addon-amd64'
+            dockerfile: './Dockerfile.HA_ADDON'
+          - displayName: 'HA-ARM64'
+            platforms: 'linux/arm64/v8'
+            buildArgs: 'BUILD_FROM=homeassistant/aarch64-base:latest'
+            tagSuffix: '-ha-addon-aarch64'
+            dockerfile: './Dockerfile.HA_ADDON'
+          - displayName: 'HA-ARMV7'
+            platforms: 'linux/arm/v7'
+            buildArgs: 'BUILD_FROM=homeassistant/armv7-base:latest'
+            tagSuffix: '-ha-addon-armv7'
+            dockerfile: './Dockerfile.HA_ADDON'
+
+    name: Push to Docker (${{ matrix.displayName }})
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,42 +51,10 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.buildArgs }}
+          platforms: ${{ matrix.platforms }}
           push: true
           tags: |
-            iclanton/hass-dashboard-renderer:${{ env.PACKAGE_VERSION }},
-            iclanton/hass-dashboard-renderer:latest
-      - name: Build and push HA_Addon AMD64 to Docker
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile.HA_ADDON
-          build-args: BUILD_FROM=homeassistant/amd64-base:latest
-          platforms: linux/amd64
-          push: true
-          tags: |
-            iclanton/hass-dashboard-renderer-ha-addon-amd64:${{ env.PACKAGE_VERSION }},
-            iclanton/hass-dashboard-renderer-ha-addon-amd64:latest
-      - name: Build and push HA_Addon aarch64 to Docker
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile.HA_ADDON
-          build-args: BUILD_FROM=homeassistant/aarch64-base:latest
-          platforms: linux/arm64/v8
-          push: true
-          tags: |
-            iclanton/hass-dashboard-renderer-ha-addon-aarch64:${{ env.PACKAGE_VERSION }},
-            iclanton/hass-dashboard-renderer-ha-addon-aarch64:latest
-      - name: Build and push HA_Addon ARMv7 to Docker
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile.HA_ADDON
-          build-args: BUILD_FROM=homeassistant/armv7-base:latest
-          platforms: linux/arm/v7
-          push: true
-          tags: |
-            iclanton/hass-dashboard-renderer-ha-addon-armv7:${{ env.PACKAGE_VERSION }},
-            iclanton/hass-dashboard-renderer-ha-addon-armv7:latest
+            iclanton/hass-dashboard-renderer${{ matrix.tagSuffix }}:${{ env.PACKAGE_VERSION }},
+            iclanton/hass-dashboard-renderer${{ matrix.tagSuffix }}:latest
