@@ -29,8 +29,8 @@ jobs:
           platforms: linux/amd64,linux/arm/v7,linux/arm64
           push: true
           tags: |
-            sibbl/hass-lovelace-kindle-screensaver:${{ env.PACKAGE_VERSION }},
-            sibbl/hass-lovelace-kindle-screensaver:latest
+            iclanton/hass-dashboard-renderer:${{ env.PACKAGE_VERSION }},
+            iclanton/hass-dashboard-renderer:latest
       - name: Build and push HA_Addon AMD64 to Docker
         uses: docker/build-push-action@v2
         with:
@@ -40,8 +40,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            sibbl/hass-lovelace-kindle-screensaver-ha-addon-amd64:${{ env.PACKAGE_VERSION }},
-            sibbl/hass-lovelace-kindle-screensaver-ha-addon-amd64:latest
+            iclanton/hass-dashboard-renderer-ha-addon-amd64:${{ env.PACKAGE_VERSION }},
+            iclanton/hass-dashboard-renderer-ha-addon-amd64:latest
       - name: Build and push HA_Addon aarch64 to Docker
         uses: docker/build-push-action@v2
         with:
@@ -51,9 +51,8 @@ jobs:
           platforms: linux/arm64/v8
           push: true
           tags: |
-            sibbl/hass-lovelace-kindle-screensaver-ha-addon-aarch64:${{ env.PACKAGE_VERSION }},
-            sibbl/hass-lovelace-kindle-screensaver-ha-addon-aarch64:latest
-
+            iclanton/hass-dashboard-renderer-ha-addon-aarch64:${{ env.PACKAGE_VERSION }},
+            iclanton/hass-dashboard-renderer-ha-addon-aarch64:latest
       - name: Build and push HA_Addon ARMv7 to Docker
         uses: docker/build-push-action@v2
         with:
@@ -63,5 +62,5 @@ jobs:
           platforms: linux/arm/v7
           push: true
           tags: |
-            sibbl/hass-lovelace-kindle-screensaver-ha-addon-armv7:${{ env.PACKAGE_VERSION }},
-            sibbl/hass-lovelace-kindle-screensaver-ha-addon-armv7:latest
+            iclanton/hass-dashboard-renderer-ha-addon-armv7:${{ env.PACKAGE_VERSION }},
+            iclanton/hass-dashboard-renderer-ha-addon-armv7:latest
