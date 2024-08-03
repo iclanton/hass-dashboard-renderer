@@ -86,6 +86,14 @@ const batteryStore = {};
     // (see https://github.com/sibbl/hass-lovelace-kindle-screensaver/README.md for patch to generate it on Kindle)
     const batteryLevel = parseInt(url.searchParams.get("batteryLevel"));
     const isCharging = url.searchParams.get("isCharging");
+    if (pageNumberStr.toUpperCase() === 'RELOAD' && request.method === 'POST') {
+      console.log('Received reload request');
+      await renderAndConvertAsync(browser);
+      response.writeHead(200);
+      response.end("Reloaded");
+      return;
+    }
+
     const pageNumber =
       pageNumberStr === "/" ? 1 : parseInt(pageNumberStr.substr(1));
     if (
