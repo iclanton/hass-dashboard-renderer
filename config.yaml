@@ -41,6 +41,7 @@ options:
   REMOVE_GAMMA: true
   PREFERS_COLOR_SCHEME: 'light'
   HA_BATTERY_WEBHOOK: ''
+  EAGER_RERENDER: false
   ADDITIONAL_ENV_VARS: []
 schema:
   HA_BASE_URL: "url"
@@ -62,6 +63,7 @@ schema:
   REMOVE_GAMMA: "bool?"
   PREFERS_COLOR_SCHEME: "list(light|dark)?"
   HA_BATTERY_WEBHOOK: "str?"
+  EAGER_RERENDER: "bool?"
   ADDITIONAL_ENV_VARS:
     - name: match(^[A-Z0-9_]+$)
       value: str

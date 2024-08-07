@@ -45,6 +45,7 @@ module.exports = {
   baseUrl: process.env.HA_BASE_URL,
   accessToken: process.env.HA_ACCESS_TOKEN,
   cronJob: process.env.CRON_JOB || "* * * * *",
+  eagerRender: process.env.EAGER_RERENDER === "true",
   useImageMagick: process.env.USE_IMAGE_MAGICK === "true",
   pages: getPagesConfig(),
   port: process.env.PORT || 5000,

@@ -113,6 +113,10 @@ const batteryStore = {};
 
       const pageIndex = pageNumber - 1;
       const configPage = config.pages[pageIndex];
+      if (config.eagerRender) {
+        console.log("Eager render requested. Rerendering...");
+        await renderAndConvertPageAsync(browser, pageIndex);
+      }
 
       const outputPathWithExtension = configPage.outputPath + "." + configPage.imageFormat
       const data = await fs.readFile(outputPathWithExtension);
@@ -170,43 +174,47 @@ const batteryStore = {};
 
 async function renderAndConvertAsync(browser) {
   for (let pageIndex = 0; pageIndex < config.pages.length; pageIndex++) {
-    const pageConfig = config.pages[pageIndex];
-    const pageBatteryStore = batteryStore[pageIndex];
+    await renderAndConvertPageAsync(browser, pageIndex);
+  }
+}
 
-    let url = `${config.baseUrl}${pageConfig.screenShotUrl}`;
-    if (pageConfig.includeCacheBreakQuery) {
-      url += `?${Date.now()}`;
-    }
+async function renderAndConvertPageAsync(browser, pageIndex) {
+  const pageConfig = config.pages[pageIndex];
+  const pageBatteryStore = batteryStore[pageIndex];
 
-    const outputPath = pageConfig.outputPath + "." + pageConfig.imageFormat;
-    await fsExtra.ensureDir(path.dirname(outputPath));
+  let url = `${config.baseUrl}${pageConfig.screenShotUrl}`;
+  if (pageConfig.includeCacheBreakQuery) {
+    url += `?${Date.now()}`;
+  }
 
-    const tempPath = outputPath + ".temp";
+  const outputPath = pageConfig.outputPath + "." + pageConfig.imageFormat;
+  await fsExtra.ensureDir(path.dirname(outputPath));
 
-    console.log(`Rendering ${url} to image...`);
-    await renderUrlToImageAsync(browser, pageConfig, url, tempPath);
+  const tempPath = outputPath + ".temp";
 
-    console.log(`Converting rendered screenshot of ${url} to grayscale...`);
-    await convertImageToKindleCompatiblePngAsync(
-      pageConfig,
-      tempPath,
-      outputPath
-    );
+  console.log(`Rendering ${url} to image...`);
+  await renderUrlToImageAsync(browser, pageConfig, url, tempPath);
 
-    fs.unlink(tempPath);
-    console.log(`Finished ${url}`);
+  console.log(`Converting rendered screenshot of ${url} to grayscale...`);
+  await convertImageToKindleCompatiblePngAsync(
+    pageConfig,
+    tempPath,
+    outputPath
+  );
 
-    if (
-      pageBatteryStore &&
-      pageBatteryStore.batteryLevel !== null &&
+  fs.unlink(tempPath);
+  console.log(`Finished ${url}`);
+
+  if (
+    pageBatteryStore &&
+    pageBatteryStore.batteryLevel !== null &&
+    pageConfig.batteryWebHook
+  ) {
+    sendBatteryLevelToHomeAssistant(
+      pageIndex,
+      pageBatteryStore,
       pageConfig.batteryWebHook
-    ) {
-      sendBatteryLevelToHomeAssistant(
-        pageIndex,
-        pageBatteryStore,
-        pageConfig.batteryWebHook
-      );
-    }
+    );
   }
 }
 
