@@ -25,6 +25,7 @@ options:
   HA_BASE_URL: 'https://your-path-to-home-assistant:8123'
   HA_SCREENSHOT_URL: '/lovelace/0'
   HA_ACCESS_TOKEN: ''
+  INCLUDE_CACHE_BREAK_QUERY: false
   LANGUAGE: 'en'
   CRON_JOB: '* * * * *'
   RENDERING_TIMEOUT: '60000'
@@ -45,6 +46,7 @@ schema:
   HA_BASE_URL: "url"
   HA_SCREENSHOT_URL: "str"
   HA_ACCESS_TOKEN: "password"
+  INCLUDE_CACHE_BREAK_QUERY: "bool?"
   LANGUAGE: "str?"
   CRON_JOB: "str?"
   RENDERING_TIMEOUT: "int?"
