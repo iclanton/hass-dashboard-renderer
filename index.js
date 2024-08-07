@@ -173,7 +173,10 @@ async function renderAndConvertAsync(browser) {
     const pageConfig = config.pages[pageIndex];
     const pageBatteryStore = batteryStore[pageIndex];
 
-    const url = `${config.baseUrl}${pageConfig.screenShotUrl}`;
+    let url = `${config.baseUrl}${pageConfig.screenShotUrl}`;
+    if (pageConfig.includeCacheBreakQuery) {
+      url += `?${Date.now()}`;
+    }
 
     const outputPath = pageConfig.outputPath + "." + pageConfig.imageFormat;
     await fsExtra.ensureDir(path.dirname(outputPath));

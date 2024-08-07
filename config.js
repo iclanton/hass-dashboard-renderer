@@ -13,6 +13,7 @@ function getPagesConfig() {
     if (!screenShotUrl) return pages;
     pages.push({
       screenShotUrl,
+      includeCacheBreakQuery: getEnvironmentVariable("INCLUDE_CACHE_BREAK_QUERY", suffix),
       imageFormat: getEnvironmentVariable("IMAGE_FORMAT", suffix) || "png",
       outputPath: getEnvironmentVariable(
         "OUTPUT_PATH",
