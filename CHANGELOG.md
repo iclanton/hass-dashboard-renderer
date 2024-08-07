@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+- When `EAGER_RERENDER` is set, don't do the initial render or enable the cronjob.
+
 ## 1.1.3
 
 - Stop logging the env during boot.
