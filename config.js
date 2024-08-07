@@ -41,10 +41,6 @@ function getPagesConfig() {
   return pages;
 }
 
-const envForLog = {...process.env};
-envForLog.HA_ACCESS_TOKEN = '***';
-console.log('Config:', JSON.stringify(envForLog, undefined, 2));
-
 module.exports = {
   baseUrl: process.env.HA_BASE_URL,
   accessToken: process.env.HA_ACCESS_TOKEN,
