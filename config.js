@@ -13,7 +13,7 @@ function getPagesConfig() {
     if (!screenShotUrl) return pages;
     pages.push({
       screenShotUrl,
-      includeCacheBreakQuery: getEnvironmentVariable("INCLUDE_CACHE_BREAK_QUERY", suffix),
+      includeCacheBreakQuery: getEnvironmentVariable("INCLUDE_CACHE_BREAK_QUERY", suffix) === "true" || false,
       imageFormat: getEnvironmentVariable("IMAGE_FORMAT", suffix) || "png",
       outputPath: getEnvironmentVariable(
         "OUTPUT_PATH",
@@ -40,6 +40,10 @@ function getPagesConfig() {
   }
   return pages;
 }
+
+const envForLog = {...process.env};
+envForLog.HA_ACCESS_TOKEN = '***';
+console.log('Config:', JSON.stringify(envForLog, undefined, 2));
 
 module.exports = {
   baseUrl: process.env.HA_BASE_URL,

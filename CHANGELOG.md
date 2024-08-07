@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Fix an issue with reading the `INCLUDE_CACHE_BREAK_QUERY` environment variable
+- Log the configuration at boot
+
 ## 1.1.0
 
 - Add an option to eagerly rerender pages on request
