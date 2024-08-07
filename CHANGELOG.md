@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+
+- Fix inclusion of `INCLUDE_CACHE_BREAK_QUERY` and `EAGER_RERENDER` options in the env
+
 ## 1.1.1
 
 - Fix an issue with reading the `INCLUDE_CACHE_BREAK_QUERY` environment variable
