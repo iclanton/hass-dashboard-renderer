@@ -5,7 +5,6 @@ const https = require("https");
 const { promises: fs } = require("fs");
 const fsExtra = require("fs-extra");
 const puppeteer = require("puppeteer");
-const { CronJob } = require("cron");
 const gm = require("gm");
 
 // keep state of current battery level and whether the device is charging
@@ -67,14 +66,29 @@ const batteryStore = {};
     );
     renderAndConvertAsync(browser);
   } else {
-    console.log("Starting first render...");
-    await renderAndConvertAsync(browser);
-    console.log("Starting rendering cronjob...");
-    new CronJob({
-      cronTime: config.cronJob,
-      onTick: () => renderAndConvertAsync(browser),
-      start: true
-    });
+    if (config.eagerRender) {
+      console.log("Eager render configured, so skipping initial render and disabling cronjob...");
+      for (let pageIndex = 0; pageIndex < config.pages.length; pageIndex++) {
+        const { outputPath } = config.pages[pageIndex];
+        try {
+          await fsExtra.rmdir(path.dirname(outputPath), { recursive: true });
+        } catch (e) {
+          if (e.code !== "ENOENT") {
+            console.error(`Failed to delete ${outputPath}: ${e}`);
+          }
+        }
+      }
+    } else {
+      console.log("Starting first render...");
+      await renderAndConvertAsync(browser);
+      console.log("Starting rendering cronjob...");
+      const { CronJob } = await import("cron");
+      new CronJob({
+        cronTime: config.cronJob,
+        onTick: () => renderAndConvertAsync(browser),
+        start: true
+      });
+    }
   }
 
   const httpServer = http.createServer(async (request, response) => {
