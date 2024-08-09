@@ -1,9 +1,10 @@
-import config, { IPageRenderingConfig, type IPageConfig } from './config';
 import path from 'path';
 import http, { type ClientRequest } from 'http';
 import https, { type RequestOptions } from 'https';
 import fsExtra from 'fs-extra';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
+
+import config, { type IPageRenderingConfig, type IPageConfig } from './config';
 
 const {
   pages,
@@ -250,9 +251,8 @@ async function renderAndConvertPageAsync(
   console.log(`Rendering ${url} to image...`);
   let image: Buffer | undefined = await renderUrlToImageAsync(browser, pageConfig, url);
   if (image) {
-    console.log(`Converting rendered screenshot of ${url} to grayscale...`);
-
     if (pageRenderingConfig) {
+      console.log(`Converting rendered screenshot of ${url} to grayscale...`);
       image = await convertImageToKindleCompatiblePngAsync(image, pageConfig, pageRenderingConfig);
     }
 
@@ -367,54 +367,42 @@ async function convertImageToKindleCompatiblePngAsync(
   { rotation, imageFormat }: IPageConfig,
   { removeGamma, dither, colorMode, blackLevel, whiteLevel, grayscaleDepth }: IPageRenderingConfig
 ): Promise<Buffer> {
-  if (
-    !dither &&
-    !removeGamma &&
-    rotation === 0 &&
-    colorMode === 'TrueColor' &&
-    (blackLevel === '0' || blackLevel === '0%') &&
-    (whiteLevel === '100' || whiteLevel === '100%') &&
-    grayscaleDepth === 8
-  ) {
-    return imageData;
-  } else {
-    type GM = typeof import('gm');
-    interface IExtendedGM extends GM {
-      (input: string | Buffer): IExtendedGMState;
-    }
-
-    type GMState = ReturnType<GM>;
-
-    interface IExtendedGMState extends GMState {
-      options(options: { imageMagick: boolean }): IExtendedGMState;
-      gamma(value: number): IExtendedGMState;
-      dither(enabled: boolean): IExtendedGMState;
-      rotate(color: string, degrees: number): IExtendedGMState;
-      type(colorMode: string): IExtendedGMState;
-      level(black: string | number, white: string | number): IExtendedGMState;
-    }
-
-    const gm: IExtendedGM = (await import('gm')).default as IExtendedGM;
-
-    return await new Promise((resolve, reject) => {
-      gm(imageData)
-        .options({
-          imageMagick: useImageMagick === true
-        })
-        .gamma(removeGamma ? 1.0 / 2.2 : 1.0)
-        .dither(dither)
-        .rotate('white', rotation)
-        .type(colorMode)
-        .level(blackLevel, whiteLevel)
-        .bitdepth(grayscaleDepth)
-        .quality(100)
-        .toBuffer(imageFormat, (err: Error | null, buffer: Buffer) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(buffer);
-          }
-        });
-    });
+  type GM = typeof import('gm');
+  interface IExtendedGM extends GM {
+    (input: string | Buffer): IExtendedGMState;
   }
+
+  type GMState = ReturnType<GM>;
+
+  interface IExtendedGMState extends GMState {
+    options(options: { imageMagick: boolean }): IExtendedGMState;
+    gamma(value: number): IExtendedGMState;
+    dither(enabled: boolean): IExtendedGMState;
+    rotate(color: string, degrees: number): IExtendedGMState;
+    type(colorMode: string): IExtendedGMState;
+    level(black: string | number, white: string | number): IExtendedGMState;
+  }
+
+  const gm: IExtendedGM = (await import('gm')).default as IExtendedGM;
+
+  return await new Promise((resolve, reject) => {
+    gm(imageData)
+      .options({
+        imageMagick: useImageMagick === true
+      })
+      .gamma(removeGamma ? 1.0 / 2.2 : 1.0)
+      .dither(dither)
+      .rotate('white', rotation)
+      .type(colorMode)
+      .level(blackLevel, whiteLevel)
+      .bitdepth(grayscaleDepth)
+      .quality(100)
+      .toBuffer(imageFormat, (err: Error | null, buffer: Buffer) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(buffer);
+        }
+      });
+  });
 }

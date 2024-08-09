@@ -1,6 +1,6 @@
 {
   "name": "hass-dashboard-renderer",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "",
   "scripts": {
     "build": "heft build --clean",
@@ -12,12 +12,11 @@
     "cron": "^1.8.2",
     "fs-extra": "^11.2.0",
     "gm": "^1.25.0",
-    "prettier": "^3.3.3",
     "puppeteer": "^11.0.0"
   },
   "devDependencies": {
-    "@rushstack/heft": "^0.66.25",
     "@rushstack/heft-node-rig": "^2.6.24",
+    "@rushstack/heft": "^0.66.25",
     "@types/cron": "^1.7.3",
     "@types/fs-extra": "^11.0.4",
     "@types/gm": "^1.25.4",

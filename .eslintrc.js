@@ -8,5 +8,16 @@ module.exports = {
     '@rushstack/heft-node-rig/profiles/default/includes/eslint/profile/node-trusted-tool',
     '@rushstack/heft-node-rig/profiles/default/includes/eslint/mixins/friendly-locals'
   ],
-  parserOptions: { tsconfigRootDir: __dirname }
+  parserOptions: { tsconfigRootDir: __dirname },
+  overrides: [
+    {
+      files: ['*.ts', '*.tsx'],
+      rules: {
+        '@typescript-eslint/consistent-type-imports': [
+          'warn',
+          { prefer: 'type-imports', disallowTypeAnnotations: false }
+        ]
+      }
+    }
+  ]
 };

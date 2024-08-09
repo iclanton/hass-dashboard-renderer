@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.1
+
+- Remove an incorrect logging statement when `LEAVE_IMAGE_UNMODIFIED` is set.
+
 ## 1.4.0
 
 - Introduce a `LEAVE_IMAGE_UNMODIFIED` option to skip any image conversion.
