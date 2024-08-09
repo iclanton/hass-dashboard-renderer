@@ -44,28 +44,28 @@ options:
   EAGER_RERENDER: false
   ADDITIONAL_ENV_VARS: []
 schema:
-  HA_BASE_URL: "url"
-  HA_SCREENSHOT_URL: "str"
-  HA_ACCESS_TOKEN: "password"
-  INCLUDE_CACHE_BREAK_QUERY: "bool?"
-  LANGUAGE: "str?"
-  CRON_JOB: "str?"
-  RENDERING_TIMEOUT: "int?"
-  RENDERING_DELAY: "int?"
-  RENDERING_SCREEN_HEIGHT: "int?"
-  RENDERING_SCREEN_WIDTH: "int?"
-  BROWSER_LAUNCH_TIMEOUT: "int?"
-  ROTATION: "int?"
-  SCALING: "float?"
-  GRAYSCALE_DEPTH: "int?"
-  IMAGE_FORMAT: "list(png|jpeg)?"
-  COLOR_MODE: "list(GrayScale|TrueColor)?"
-  REMOVE_GAMMA: "bool?"
-  PREFERS_COLOR_SCHEME: "list(light|dark)?"
-  HA_BATTERY_WEBHOOK: "str?"
-  EAGER_RERENDER: "bool?"
+  HA_BASE_URL: 'url'
+  HA_SCREENSHOT_URL: 'str'
+  HA_ACCESS_TOKEN: 'password'
+  INCLUDE_CACHE_BREAK_QUERY: 'bool?'
+  LANGUAGE: 'str?'
+  CRON_JOB: 'str?'
+  RENDERING_TIMEOUT: 'int?'
+  RENDERING_DELAY: 'int?'
+  RENDERING_SCREEN_HEIGHT: 'int?'
+  RENDERING_SCREEN_WIDTH: 'int?'
+  BROWSER_LAUNCH_TIMEOUT: 'int?'
+  ROTATION: 'int?'
+  SCALING: 'float?'
+  GRAYSCALE_DEPTH: 'int?'
+  IMAGE_FORMAT: 'list(png|jpeg)?'
+  COLOR_MODE: 'list(GrayScale|TrueColor)?'
+  REMOVE_GAMMA: 'bool?'
+  PREFERS_COLOR_SCHEME: 'list(light|dark)?'
+  HA_BATTERY_WEBHOOK: 'str?'
+  EAGER_RERENDER: 'bool?'
   ADDITIONAL_ENV_VARS:
     - name: match(^[A-Z0-9_]+$)
       value: str
 environment:
-  output_path: "/output/cover"
+  output_path: '/output/cover'

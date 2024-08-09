@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache \
     chromium \
     nss \
-    freetype \    
+    freetype \
     font-noto-emoji \
     freetype-dev \
     harfbuzz \
@@ -22,7 +22,7 @@ COPY local.conf /etc/fonts/local.conf
 
 RUN npm ci
 
-COPY *.js ./
+COPY ./lib/*.js ./lib/
 
 EXPOSE 5000
 

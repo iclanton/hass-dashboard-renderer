@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM ${BUILD_FROM} 
+FROM ${BUILD_FROM}
 
 WORKDIR /app
 RUN apk add --no-cache \
@@ -21,7 +21,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 COPY package*.json ./
 COPY local.conf /etc/fonts/local.conf
-COPY *.js ./
+COPY ./lib/*.js ./lib/
 
 RUN npm ci
 

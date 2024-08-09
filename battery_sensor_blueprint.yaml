@@ -33,7 +33,7 @@ action:
     target:
       entity_id: !input battery_level
     data:
-      value: "{{ trigger.json.batteryLevel }}"
+      value: '{{ trigger.json.batteryLevel }}'
   - service_template: >-
       {% if trigger.json.isCharging %}
       input_boolean.turn_on

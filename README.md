@@ -30,7 +30,7 @@ You can then access the image by doing a simple GET request to e.g. `http://loca
 Home Assistant related stuff:
 
 | Env Var                   | Sample value                          | Required | Array?\* | Description                                                                                                                                                                                          |
-|---------------------------|---------------------------------------| -------- | -------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------- | ------------------------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `HA_BASE_URL`             | `https://your-hass-instance.com:8123` | yes      | no       | Base URL of your home assistant instance                                                                                                                                                             |
 | `HA_SCREENSHOT_URL`       | `/lovelace/screensaver?kiosk`         | yes      | yes      | Relative URL to take screenshot of (btw, the `?kiosk` parameter hides the nav bar using the [kiosk mode](https://github.com/NemesisRE/kiosk-mode) project)                                           |
 | `HA_ACCESS_TOKEN`         | `eyJ0...`                             | yes      | no       | Long-lived access token from Home Assistant, see [official docs](https://developers.home-assistant.io/docs/auth_api/#long-lived-access-token)                                                        |
@@ -58,12 +58,12 @@ You can access these additional images by making GET Requests `http://localhost:
 To make us of the array feature in the Home Assistant Add-On, you may use `ADDITIONAL_ENV_VARS`. It expects a format like this to set any additional environment variable:
 
 ```yaml
-- name: "HA_SCREENSHOT_URL_2"
-  value: "/lovelace/second-page"
-- name: "ROTATION_2"
-  value: "180"
-- name: "HA_SCREENSHOT_URL_3"
-  value: "/lovelace/third-page"
+- name: 'HA_SCREENSHOT_URL_2'
+  value: '/lovelace/second-page'
+- name: 'ROTATION_2'
+  value: '180'
+- name: 'HA_SCREENSHOT_URL_3'
+  value: '/lovelace/third-page'
 ```
 
 To avoid problems, please ensure that the name only contains upper case letters, numbers and underscores. The value field must be a string, so it's better to always put your value (especially numbers) into a `"string"` .
