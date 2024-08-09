@@ -89,7 +89,7 @@ declare const localStorage: { setItem(key: string, value: string): void };
       for (let pageIndex: number = 0; pageIndex < pages.length; pageIndex++) {
         const { outputPath } = pages[pageIndex];
         try {
-          await fsExtra.rmdir(path.dirname(outputPath), { recursive: true });
+          await fsExtra.rm(path.dirname(outputPath), { recursive: true });
         } catch (e) {
           if (e.code !== 'ENOENT') {
             console.error(`Failed to delete ${outputPath}: ${e}`);
@@ -389,7 +389,7 @@ async function convertImageToKindleCompatiblePngAsync(
     level(black: string | number, white: string | number): IExtendedGMState;
   }
 
-  const gm: IExtendedGM = (await import('gm')) as unknown as IExtendedGM;
+  const gm: IExtendedGM = (await import('gm')).default as IExtendedGM;
 
   return await new Promise((resolve, reject) => {
     gm(imageData)

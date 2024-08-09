@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2
+
+- Fix an issue with image conversion.
+
 ## 1.3.1
 
 - Fix an issue where the browser would fail to start.
