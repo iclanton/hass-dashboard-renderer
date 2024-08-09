@@ -2,9 +2,8 @@
   "name": "hass-dashboard-renderer",
   "version": "1.2.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node lib/start.js"
   },
   "author": "iclanton",
   "license": "MIT",
