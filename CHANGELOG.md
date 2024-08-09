@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1
+
+- Fix an issue where the browser would fail to start.
+
 ## 1.3.0
 
 - Refactor the codebase to TypeScript and render in-memory when `EAGER_RERENDER` is set.
