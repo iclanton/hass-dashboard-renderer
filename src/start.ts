@@ -148,26 +148,35 @@ declare const localStorage: { setItem(key: string, value: string): void };
         console.log(`${now.toISOString()}: Image ${pageNumber} was accessed`);
 
         const pageIndex: number = pageNumber - 1;
-        const { outputPath, imageFormat }: IPageConfig = pages[pageIndex];
+        const pageConfig: IPageConfig = pages[pageIndex];
+        const { outputPath, imageFormat } = pageConfig;
+        let imageData: Buffer | undefined;
+        let lastModifiedTime: string;
         if (eagerRender) {
           console.log('Eager render requested. Rerendering...');
-          await renderAndConvertPageAsync(browser, pageIndex);
+          imageData = await renderAndConvertPageAsync(browser, pageConfig, pageIndex);
+          lastModifiedTime = new Date().toUTCString();
+        } else {
+          const outputPathWithExtension: string = `${outputPath}.${imageFormat}`;
+          const [data, stat] = await Promise.all([
+            fsExtra.readFile(outputPathWithExtension),
+            fsExtra.stat(outputPathWithExtension)
+          ]);
+          imageData = data;
+          lastModifiedTime = new Date(stat.mtime).toUTCString();
         }
 
-        const outputPathWithExtension: string = outputPath + '.' + imageFormat;
-        const [data, stat] = await Promise.all([
-          fsExtra.readFile(outputPathWithExtension),
-          fsExtra.stat(outputPathWithExtension)
-        ]);
-
-        const lastModifiedTime: string = new Date(stat.mtime).toUTCString();
-
-        response.writeHead(200, {
-          'Content-Type': `image/${imageFormat}`,
-          'Content-Length': Buffer.byteLength(data),
-          'Last-Modified': lastModifiedTime
-        });
-        response.end(data);
+        if (imageData) {
+          response.writeHead(200, {
+            'Content-Type': `image/${imageFormat}`,
+            'Content-Length': Buffer.byteLength(imageData),
+            'Last-Modified': lastModifiedTime
+          });
+          response.end(imageData);
+        } else {
+          response.writeHead(500);
+          response.end('Failed to render image');
+        }
 
         let pageBatteryStore: IBatteryStoreEntry | undefined = batteryStoreByPageIndex.get(pageIndex);
         if (!pageBatteryStore) {
@@ -210,19 +219,27 @@ declare const localStorage: { setItem(key: string, value: string): void };
 
 async function renderAndConvertAsync(browser: Browser): Promise<void> {
   for (let pageIndex: number = 0; pageIndex < pages.length; pageIndex++) {
-    await renderAndConvertPageAsync(browser, pageIndex);
+    const pageConfig: IPageConfig = pages[pageIndex];
+    const image: Buffer | undefined = await renderAndConvertPageAsync(browser, pageConfig, pageIndex);
+    if (!eagerRender) {
+      if (image) {
+        const { outputPath: configOutputPath, imageFormat } = pageConfig;
+        await fsExtra.ensureDir(path.dirname(configOutputPath));
+        const outputPath: string = `${configOutputPath}.${imageFormat}`;
+        await fsExtra.writeFile(outputPath, image);
+      } else {
+        console.log(`Failed to render page ${pageIndex + 1}. Falling back to existing image, if one exists.`);
+      }
+    }
   }
 }
 
-async function renderAndConvertPageAsync(browser: Browser, pageIndex: number): Promise<void> {
-  const pageConfig: IPageConfig = pages[pageIndex];
-  const {
-    screenShotUrl,
-    includeCacheBreakQuery,
-    outputPath: configOutputPath,
-    imageFormat,
-    batteryWebHook
-  } = pageConfig;
+async function renderAndConvertPageAsync(
+  browser: Browser,
+  pageConfig: IPageConfig,
+  pageIndex: number
+): Promise<Buffer | undefined> {
+  const { screenShotUrl, includeCacheBreakQuery, batteryWebHook } = pageConfig;
   const pageBatteryStore: IBatteryStoreEntry | undefined = batteryStoreByPageIndex.get(pageIndex);
 
   let url: string = `${baseUrl}${screenShotUrl}`;
@@ -230,22 +247,20 @@ async function renderAndConvertPageAsync(browser: Browser, pageIndex: number): P
     url += `?${Date.now()}`;
   }
 
-  const outputPath: string = `${configOutputPath}.${imageFormat}`;
-  await fsExtra.ensureDir(path.dirname(configOutputPath));
-
-  const tempPath: string = `${outputPath}.temp`;
-
   console.log(`Rendering ${url} to image...`);
-  await renderUrlToImageAsync(browser, pageConfig, url, tempPath);
+  let image: Buffer | undefined = await renderUrlToImageAsync(browser, pageConfig, url);
+  if (image) {
+    console.log(`Converting rendered screenshot of ${url} to grayscale...`);
 
-  console.log(`Converting rendered screenshot of ${url} to grayscale...`);
-  await convertImageToKindleCompatiblePngAsync(pageConfig, tempPath, outputPath);
+    image = await convertImageToKindleCompatiblePngAsync(image, pageConfig);
 
-  await fsExtra.unlink(tempPath);
-  console.log(`Finished ${url}`);
+    console.log(`Finished ${url}`);
 
-  if (pageBatteryStore?.batteryLevel !== undefined && batteryWebHook) {
-    sendBatteryLevelToHomeAssistant(pageIndex, pageBatteryStore, batteryWebHook);
+    if (pageBatteryStore?.batteryLevel !== undefined && batteryWebHook) {
+      sendBatteryLevelToHomeAssistant(pageIndex, pageBatteryStore, batteryWebHook);
+    }
+
+    return image;
   }
 }
 
@@ -282,9 +297,8 @@ function sendBatteryLevelToHomeAssistant(
 async function renderUrlToImageAsync(
   browser: Browser,
   { prefersColorScheme, renderingScreenSize, rotation, scaling, renderingDelay, imageFormat }: IPageConfig,
-  url: string,
-  path: string
-): Promise<void> {
+  url: string
+): Promise<Buffer | undefined> {
   let page: Page | undefined;
   try {
     page = await browser.newPage();
@@ -327,16 +341,16 @@ async function renderUrlToImageAsync(
       await page.waitForTimeout(renderingDelay);
     }
 
-    await page.screenshot({
-      path,
+    return (await page.screenshot({
       type: imageFormat,
       captureBeyondViewport: false,
       clip: {
         x: 0,
         y: 0,
         ...size
-      }
-    });
+      },
+      encoding: 'binary'
+    })) as Buffer;
   } catch (e) {
     console.error('Failed to render', e);
   } finally {
@@ -347,13 +361,21 @@ async function renderUrlToImageAsync(
 }
 
 async function convertImageToKindleCompatiblePngAsync(
-  { removeGamma, dither, rotation, colorMode, blackLevel, whiteLevel, grayscaleDepth }: IPageConfig,
-  inputPath: string,
-  outputPath: string
-): Promise<void> {
+  imageData: Buffer,
+  {
+    removeGamma,
+    dither,
+    rotation,
+    colorMode,
+    blackLevel,
+    whiteLevel,
+    grayscaleDepth,
+    imageFormat
+  }: IPageConfig
+): Promise<Buffer> {
   type GM = typeof import('gm');
   interface IExtendedGM extends GM {
-    (input: string): IExtendedGMState;
+    (input: string | Buffer): IExtendedGMState;
   }
 
   type GMState = ReturnType<GM>;
@@ -369,8 +391,8 @@ async function convertImageToKindleCompatiblePngAsync(
 
   const gm: IExtendedGM = (await import('gm')) as unknown as IExtendedGM;
 
-  await new Promise<void>((resolve, reject) => {
-    gm(inputPath)
+  return await new Promise((resolve, reject) => {
+    gm(imageData)
       .options({
         imageMagick: useImageMagick === true
       })
@@ -381,11 +403,11 @@ async function convertImageToKindleCompatiblePngAsync(
       .level(blackLevel, whiteLevel)
       .bitdepth(grayscaleDepth)
       .quality(100)
-      .write(outputPath, (err: Error | null) => {
+      .toBuffer(imageFormat, (err: Error | null, buffer: Buffer) => {
         if (err) {
           reject(err);
         } else {
-          resolve();
+          resolve(buffer);
         }
       });
   });
