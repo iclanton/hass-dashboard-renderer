@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+- Introduce a `LEAVE_IMAGE_UNMODIFIED` option to skip any image conversion.
+
 ## 1.3.2
 
 - Fix an issue with image conversion.

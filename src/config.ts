@@ -64,6 +64,15 @@ function getNumberEnvironmentVariable(key: string, required?: boolean): number |
   }
 }
 
+export interface IPageRenderingConfig {
+  grayscaleDepth: number;
+  removeGamma: boolean;
+  blackLevel: string;
+  whiteLevel: string;
+  dither: boolean;
+  colorMode: 'GrayScale' | 'TrueColor';
+}
+
 export interface IPageConfig {
   screenShotUrl: string;
   includeCacheBreakQuery: boolean;
@@ -74,14 +83,9 @@ export interface IPageConfig {
     height: number;
     width: number;
   };
-  grayscaleDepth: number;
-  removeGamma: boolean;
-  blackLevel: string;
-  whiteLevel: string;
-  dither: boolean;
-  colorMode: 'GrayScale' | 'TrueColor';
-  prefersColorScheme: 'light' | 'dark';
   rotation: number;
+  pageRenderingConfig: IPageRenderingConfig | undefined;
+  prefersColorScheme: 'light' | 'dark';
   scaling: number;
   batteryWebHook: string | undefined;
 }
@@ -96,6 +100,18 @@ function getPagesConfig(): IPageConfig[] {
       break;
     }
 
+    const pageRenderingConfig: IPageRenderingConfig | undefined =
+      getEnvironmentVariableForPage('LEAVE_IMAGE_UNMODIFIED', suffix) === 'true'
+        ? undefined
+        : {
+            grayscaleDepth: getNumberEnvironmentVariableForPage('GRAYSCALE_DEPTH', suffix) ?? 8,
+            removeGamma: getEnvironmentVariableForPage('REMOVE_GAMMA', suffix) === 'true' ?? false,
+            blackLevel: getEnvironmentVariableForPage('BLACK_LEVEL', suffix) ?? '0%',
+            whiteLevel: getEnvironmentVariableForPage('WHITE_LEVEL', suffix) ?? '100%',
+            dither: getEnvironmentVariableForPage('DITHER', suffix) === 'true' ?? false,
+            colorMode: getEnvironmentVariableForPage('COLOR_MODE', suffix) ?? 'GrayScale'
+          };
+
     pages.push({
       screenShotUrl,
       includeCacheBreakQuery:
@@ -107,14 +123,9 @@ function getPagesConfig(): IPageConfig[] {
         height: getNumberEnvironmentVariableForPage('RENDERING_SCREEN_HEIGHT', suffix) ?? 800,
         width: getNumberEnvironmentVariableForPage('RENDERING_SCREEN_WIDTH', suffix) ?? 600
       },
-      grayscaleDepth: getNumberEnvironmentVariableForPage('GRAYSCALE_DEPTH', suffix) ?? 8,
-      removeGamma: getEnvironmentVariableForPage('REMOVE_GAMMA', suffix) === 'true' ?? false,
-      blackLevel: getEnvironmentVariableForPage('BLACK_LEVEL', suffix) ?? '0%',
-      whiteLevel: getEnvironmentVariableForPage('WHITE_LEVEL', suffix) ?? '100%',
-      dither: getEnvironmentVariableForPage('DITHER', suffix) === 'true' ?? false,
-      colorMode: getEnvironmentVariableForPage('COLOR_MODE', suffix) ?? 'GrayScale',
-      prefersColorScheme: getEnvironmentVariableForPage('PREFERS_COLOR_SCHEME', suffix) ?? 'light',
+      pageRenderingConfig,
       rotation: getNumberEnvironmentVariableForPage('ROTATION', suffix) ?? 0,
+      prefersColorScheme: getEnvironmentVariableForPage('PREFERS_COLOR_SCHEME', suffix) ?? 'light',
       scaling: getNumberEnvironmentVariableForPage('SCALING', suffix) ?? 1,
       batteryWebHook: getEnvironmentVariableForPage('HA_BATTERY_WEBHOOK', suffix)
     });

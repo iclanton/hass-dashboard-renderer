@@ -1,5 +1,5 @@
 name: Dashboard Image Renderer
-version: 1.3.2
+version: 1.4.0
 slug: dashboard-image-renderer
 description: This addon renders an image of a Home Assistant Lovelace dashboard and serves it over HTTP.
 startup: application
@@ -33,6 +33,7 @@ options:
   RENDERING_SCREEN_HEIGHT: '800'
   RENDERING_SCREEN_WIDTH: '600'
   BROWSER_LAUNCH_TIMEOUT: '30000'
+  LEAVE_IMAGE_UNMODIFIED: false
   ROTATION: '0'
   SCALING: '1'
   GRAYSCALE_DEPTH: '8'
@@ -55,6 +56,7 @@ schema:
   RENDERING_SCREEN_HEIGHT: 'int?'
   RENDERING_SCREEN_WIDTH: 'int?'
   BROWSER_LAUNCH_TIMEOUT: 'int?'
+  LEAVE_IMAGE_UNMODIFIED: 'bool?'
   ROTATION: 'int?'
   SCALING: 'float?'
   GRAYSCALE_DEPTH: 'int?'
