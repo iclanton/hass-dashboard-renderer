@@ -1,13 +1,27 @@
-node_modules/
-.github/
-.git/
-.vscode/
-assets/
-config.*.js
-docker-compose.*.yml
-docker-compose.yml
-output/
-LICENSE
-*.md
-*.yml
-*.yaml
+# Ignore all files by default, to avoid accidentally publishing unintended files.
+*
+
+# Use negative patterns to bring back the specific things we want to publish.
+!/bin/**
+!/lib/**
+!/lib-*/**
+!/dist/**
+!CHANGELOG.md
+!Dockerfile*
+!LICENSE
+!README.md
+!battery_sensor_blueprint.yaml
+!config.yaml
+!local.conf
+!lovelace-eink-theme.yml
+!package-lock.json
+!package.json
+!repository.yaml
+!run.sh
+
+# Ignore certain patterns that should not get published.
+/dist/*.stats.*
+/lib/**/test/
+/lib-*/**/test/
+*.test.js
+ 

@@ -3,14 +3,24 @@
   "version": "1.2.0",
   "description": "",
   "scripts": {
+    "build": "heft build --clean",
     "start": "node lib/start.js"
   },
   "author": "iclanton",
   "license": "MIT",
   "dependencies": {
     "cron": "^1.8.2",
-    "fs-extra": "^10.0.0",
-    "gm": "^1.23.1",
+    "fs-extra": "^11.2.0",
+    "gm": "^1.25.0",
+    "prettier": "^3.3.3",
     "puppeteer": "^11.0.0"
+  },
+  "devDependencies": {
+    "@rushstack/heft": "^0.66.25",
+    "@rushstack/heft-node-rig": "^2.6.24",
+    "@types/cron": "^1.7.3",
+    "@types/fs-extra": "^11.0.4",
+    "@types/gm": "^1.25.4",
+    "@types/node": "20.14.14"
   }
 }

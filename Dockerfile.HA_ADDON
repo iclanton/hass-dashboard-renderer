@@ -2,6 +2,7 @@ ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
 WORKDIR /app
+
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -24,7 +25,6 @@ COPY local.conf /etc/fonts/local.conf
 COPY ./lib/*.js ./lib/
 
 RUN npm ci
-
 
 # Copy data for add-on
 COPY run.sh /

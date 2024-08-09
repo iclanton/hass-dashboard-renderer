@@ -1,48 +1,70 @@
-const config = require('./config');
-const path = require('path');
-const http = require('http');
-const https = require('https');
-const { promises: fs } = require('fs');
-const fsExtra = require('fs-extra');
-const puppeteer = require('puppeteer');
-const gm = require('gm');
+import config, { type IPageConfig } from './config';
+import path from 'path';
+import http, { type ClientRequest } from 'http';
+import https, { type RequestOptions } from 'https';
+import fsExtra from 'fs-extra';
+import puppeteer, { type Browser, type Page } from 'puppeteer';
+
+const {
+  pages,
+  ignoreCertificateErrors,
+  debug,
+  port,
+  browserLaunchTimeout,
+  baseUrl,
+  renderingTimeout,
+  accessToken,
+  language,
+  eagerRender,
+  cronJob: cronTime,
+  useImageMagick
+} = config;
+
+interface IBatteryStoreEntry {
+  batteryLevel: number | undefined;
+  isCharging: boolean;
+}
 
 // keep state of current battery level and whether the device is charging
-const batteryStore = {};
+const batteryStoreByPageIndex: Map<number, IBatteryStoreEntry> = new Map();
+
+// For puppeteer
+declare const localStorage: { setItem(key: string, value: string): void };
 
 (async () => {
-  if (config.pages.length === 0) {
+  if (pages.length === 0) {
     return console.error('Please check your configuration');
   }
-  for (const i in config.pages) {
-    const pageConfig = config.pages[i];
-    if (pageConfig.rotation % 90 > 0) {
-      return console.error(`Invalid rotation value for entry ${i + 1}: ${pageConfig.rotation}`);
+
+  for (let i: number = 0; i < pages.length; i++) {
+    const { rotation }: IPageConfig = pages[i];
+    if (rotation % 90 > 0) {
+      return console.error(`Invalid rotation value for entry ${i + 1}: ${rotation}`);
     }
   }
 
   console.log('Starting browser...');
-  let browser = await puppeteer.launch({
-    args: [
-      '--disable-dev-shm-usage',
-      '--no-sandbox',
-      `--lang=${config.language}`,
-      config.ignoreCertificateErrors && '--ignore-certificate-errors'
-    ].filter((x) => x),
+  const puppeteerArgs: string[] = ['--disable-dev-shm-usage', '--no-sandbox', `--lang=${language}`];
+  if (ignoreCertificateErrors) {
+    puppeteerArgs.push('--ignore-certificate-errors');
+  }
+
+  const browser: Browser = await puppeteer.launch({
+    args: puppeteerArgs,
     defaultViewport: null,
-    timeout: config.browserLaunchTimeout,
-    headless: config.debug !== true
+    timeout: browserLaunchTimeout,
+    headless: debug
   });
 
-  console.log(`Visiting '${config.baseUrl}' to login...`);
-  let page = await browser.newPage();
-  await page.goto(config.baseUrl, {
-    timeout: config.renderingTimeout
+  console.log(`Visiting '${baseUrl}' to login...`);
+  const page: Page = await browser.newPage();
+  await page.goto(baseUrl, {
+    timeout: renderingTimeout
   });
 
-  const hassTokens = {
-    hassUrl: config.baseUrl,
-    access_token: config.accessToken,
+  const hassTokens: Record<string, string> = {
+    hassUrl: baseUrl,
+    access_token: accessToken,
     token_type: 'Bearer'
   };
 
@@ -53,19 +75,19 @@ const batteryStore = {};
       localStorage.setItem('selectedLanguage', selectedLanguage);
     },
     JSON.stringify(hassTokens),
-    JSON.stringify(config.language)
+    JSON.stringify(language)
   );
 
-  page.close();
+  await page.close();
 
-  if (config.debug) {
+  if (debug) {
     console.log('Debug mode active, will only render once in non-headless model and keep page open');
-    renderAndConvertAsync(browser);
+    await renderAndConvertAsync(browser);
   } else {
-    if (config.eagerRender) {
+    if (eagerRender) {
       console.log('Eager render configured, so skipping initial render and disabling cronjob...');
-      for (let pageIndex = 0; pageIndex < config.pages.length; pageIndex++) {
-        const { outputPath } = config.pages[pageIndex];
+      for (let pageIndex: number = 0; pageIndex < pages.length; pageIndex++) {
+        const { outputPath } = pages[pageIndex];
         try {
           await fsExtra.rmdir(path.dirname(outputPath), { recursive: true });
         } catch (e) {
@@ -79,116 +101,139 @@ const batteryStore = {};
       await renderAndConvertAsync(browser);
       console.log('Starting rendering cronjob...');
       const { CronJob } = await import('cron');
+      // eslint-disable-next-line no-new
       new CronJob({
-        cronTime: config.cronJob,
+        cronTime,
         onTick: () => renderAndConvertAsync(browser),
         start: true
       });
     }
   }
 
-  const httpServer = http.createServer(async (request, response) => {
-    // Parse the request
-    const url = new URL(request.url, `http://${request.headers.host}`);
-    // Check the page number
-    const pageNumberStr = url.pathname;
-    // and get the battery level, if any
-    // (see https://github.com/sibbl/hass-lovelace-kindle-screensaver/README.md for patch to generate it on Kindle)
-    const batteryLevel = parseInt(url.searchParams.get('batteryLevel'));
-    const isCharging = url.searchParams.get('isCharging');
-    if (pageNumberStr.toUpperCase() === '/RELOAD' && request.method === 'POST') {
-      console.log('Received reload request');
-      await renderAndConvertAsync(browser);
-      response.writeHead(200);
-      response.end('Reloaded');
-      return;
-    }
-
-    const pageNumber = pageNumberStr === '/' ? 1 : parseInt(pageNumberStr.substr(1));
-    if (isFinite(pageNumber) === false || pageNumber > config.pages.length || pageNumber < 1) {
-      console.log(`Invalid request: ${request.url} for page ${pageNumber}`);
-      response.writeHead(400);
-      response.end('Invalid request');
-      return;
-    }
-    try {
-      // Log when the page was accessed
-      const n = new Date();
-      console.log(`${n.toISOString()}: Image ${pageNumber} was accessed`);
-
-      const pageIndex = pageNumber - 1;
-      const configPage = config.pages[pageIndex];
-      if (config.eagerRender) {
-        console.log('Eager render requested. Rerendering...');
-        await renderAndConvertPageAsync(browser, pageIndex);
+  const httpServer: http.Server = http.createServer(
+    async ({ url: requestUrl, headers: { host: requestHost }, method }, response) => {
+      if (!requestUrl) {
+        response.writeHead(400);
+        response.end('No request URL');
+        return;
       }
 
-      const outputPathWithExtension = configPage.outputPath + '.' + configPage.imageFormat;
-      const data = await fs.readFile(outputPathWithExtension);
-      const stat = await fs.stat(outputPathWithExtension);
-
-      const lastModifiedTime = new Date(stat.mtime).toUTCString();
-
-      response.writeHead(200, {
-        'Content-Type': 'image/' + configPage.imageFormat,
-        'Content-Length': Buffer.byteLength(data),
-        'Last-Modified': lastModifiedTime
-      });
-      response.end(data);
-
-      let pageBatteryStore = batteryStore[pageIndex];
-      if (!pageBatteryStore) {
-        pageBatteryStore = batteryStore[pageIndex] = {
-          batteryLevel: null,
-          isCharging: false
-        };
+      // Parse the request
+      const url: URL = new URL(requestUrl, `http://${requestHost}`);
+      // Check the page number
+      const pageNumberStr: string = url.pathname;
+      // and get the battery level, if any
+      // (see https://github.com/sibbl/hass-lovelace-kindle-screensaver/README.md for patch to generate it on Kindle)
+      const batteryLevelStr: string | null = url.searchParams.get('batteryLevel');
+      const batteryLevel: number | undefined = batteryLevelStr ? parseInt(batteryLevelStr) : undefined;
+      const isCharging: string | null = url.searchParams.get('isCharging');
+      if (pageNumberStr.toUpperCase() === '/RELOAD' && method === 'POST') {
+        console.log('Received reload request');
+        await renderAndConvertAsync(browser);
+        response.writeHead(200);
+        response.end('Reloaded');
+        return;
       }
-      if (!isNaN(batteryLevel) && batteryLevel >= 0 && batteryLevel <= 100) {
-        if (batteryLevel !== pageBatteryStore.batteryLevel) {
-          pageBatteryStore.batteryLevel = batteryLevel;
-          console.log(`New battery level: ${batteryLevel} for page ${pageNumber}`);
+
+      const pageNumber: number = pageNumberStr === '/' ? 1 : parseInt(pageNumberStr.substring(1));
+      if (isFinite(pageNumber) === false || pageNumber > pages.length || pageNumber < 1) {
+        console.log(`Invalid request: ${requestUrl} for page ${pageNumber}`);
+        response.writeHead(400);
+        response.end('Invalid request');
+        return;
+      }
+      try {
+        // Log when the page was accessed
+        const now: Date = new Date();
+        console.log(`${now.toISOString()}: Image ${pageNumber} was accessed`);
+
+        const pageIndex: number = pageNumber - 1;
+        const { outputPath, imageFormat }: IPageConfig = pages[pageIndex];
+        if (eagerRender) {
+          console.log('Eager render requested. Rerendering...');
+          await renderAndConvertPageAsync(browser, pageIndex);
         }
 
-        if ((isCharging === 'Yes' || isCharging === '1') && pageBatteryStore.isCharging !== true) {
-          pageBatteryStore.isCharging = true;
-          console.log(`Battery started charging for page ${pageNumber}`);
-        } else if ((isCharging === 'No' || isCharging === '0') && pageBatteryStore.isCharging !== false) {
-          console.log(`Battery stopped charging for page ${pageNumber}`);
-          pageBatteryStore.isCharging = false;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      response.writeHead(404);
-      response.end('Image not found');
-    }
-  });
+        const outputPathWithExtension: string = outputPath + '.' + imageFormat;
+        const [data, stat] = await Promise.all([
+          fsExtra.readFile(outputPathWithExtension),
+          fsExtra.stat(outputPathWithExtension)
+        ]);
 
-  const port = config.port || 5000;
+        const lastModifiedTime: string = new Date(stat.mtime).toUTCString();
+
+        response.writeHead(200, {
+          'Content-Type': `image/${imageFormat}`,
+          'Content-Length': Buffer.byteLength(data),
+          'Last-Modified': lastModifiedTime
+        });
+        response.end(data);
+
+        let pageBatteryStore: IBatteryStoreEntry | undefined = batteryStoreByPageIndex.get(pageIndex);
+        if (!pageBatteryStore) {
+          pageBatteryStore = {
+            batteryLevel: undefined,
+            isCharging: false
+          };
+
+          batteryStoreByPageIndex.set(pageIndex, pageBatteryStore);
+        }
+
+        if (batteryLevel && !isNaN(batteryLevel) && batteryLevel >= 0 && batteryLevel <= 100) {
+          if (batteryLevel !== pageBatteryStore.batteryLevel) {
+            pageBatteryStore.batteryLevel = batteryLevel;
+            console.log(`New battery level: ${batteryLevel} for page ${pageNumber}`);
+          }
+
+          if ((isCharging === 'Yes' || isCharging === '1') && pageBatteryStore.isCharging !== true) {
+            pageBatteryStore.isCharging = true;
+            console.log(`Battery started charging for page ${pageNumber}`);
+          } else if ((isCharging === 'No' || isCharging === '0') && pageBatteryStore.isCharging !== false) {
+            console.log(`Battery stopped charging for page ${pageNumber}`);
+            pageBatteryStore.isCharging = false;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        response.writeHead(404);
+        response.end('Image not found');
+      }
+    }
+  );
+
   httpServer.listen(port, () => {
     console.log(`Server is running at ${port}`);
   });
-})();
+})().catch((e) => {
+  console.error(e);
+});
 
-async function renderAndConvertAsync(browser) {
-  for (let pageIndex = 0; pageIndex < config.pages.length; pageIndex++) {
+async function renderAndConvertAsync(browser: Browser): Promise<void> {
+  for (let pageIndex: number = 0; pageIndex < pages.length; pageIndex++) {
     await renderAndConvertPageAsync(browser, pageIndex);
   }
 }
 
-async function renderAndConvertPageAsync(browser, pageIndex) {
-  const pageConfig = config.pages[pageIndex];
-  const pageBatteryStore = batteryStore[pageIndex];
+async function renderAndConvertPageAsync(browser: Browser, pageIndex: number): Promise<void> {
+  const pageConfig: IPageConfig = pages[pageIndex];
+  const {
+    screenShotUrl,
+    includeCacheBreakQuery,
+    outputPath: configOutputPath,
+    imageFormat,
+    batteryWebHook
+  } = pageConfig;
+  const pageBatteryStore: IBatteryStoreEntry | undefined = batteryStoreByPageIndex.get(pageIndex);
 
-  let url = `${config.baseUrl}${pageConfig.screenShotUrl}`;
-  if (pageConfig.includeCacheBreakQuery) {
+  let url: string = `${baseUrl}${screenShotUrl}`;
+  if (includeCacheBreakQuery) {
     url += `?${Date.now()}`;
   }
 
-  const outputPath = pageConfig.outputPath + '.' + pageConfig.imageFormat;
-  await fsExtra.ensureDir(path.dirname(outputPath));
+  const outputPath: string = `${configOutputPath}.${imageFormat}`;
+  await fsExtra.ensureDir(path.dirname(configOutputPath));
 
-  const tempPath = outputPath + '.temp';
+  const tempPath: string = `${outputPath}.temp`;
 
   console.log(`Rendering ${url} to image...`);
   await renderUrlToImageAsync(browser, pageConfig, url, tempPath);
@@ -196,27 +241,33 @@ async function renderAndConvertPageAsync(browser, pageIndex) {
   console.log(`Converting rendered screenshot of ${url} to grayscale...`);
   await convertImageToKindleCompatiblePngAsync(pageConfig, tempPath, outputPath);
 
-  fs.unlink(tempPath);
+  await fsExtra.unlink(tempPath);
   console.log(`Finished ${url}`);
 
-  if (pageBatteryStore && pageBatteryStore.batteryLevel !== null && pageConfig.batteryWebHook) {
-    sendBatteryLevelToHomeAssistant(pageIndex, pageBatteryStore, pageConfig.batteryWebHook);
+  if (pageBatteryStore?.batteryLevel !== undefined && batteryWebHook) {
+    sendBatteryLevelToHomeAssistant(pageIndex, pageBatteryStore, batteryWebHook);
   }
 }
 
-function sendBatteryLevelToHomeAssistant(pageIndex, batteryStore, batteryWebHook) {
-  const batteryStatus = JSON.stringify(batteryStore);
-  const options = {
+function sendBatteryLevelToHomeAssistant(
+  pageIndex: number,
+  batteryStore: IBatteryStoreEntry,
+  batteryWebHook: string
+): void {
+  const batteryStatus: string = JSON.stringify(batteryStore);
+  const options: RequestOptions = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(batteryStatus)
     },
-    rejectUnauthorized: !config.ignoreCertificateErrors
+    rejectUnauthorized: !ignoreCertificateErrors
   };
-  const url = `${config.baseUrl}/api/webhook/${batteryWebHook}`;
-  const httpLib = url.toLowerCase().startsWith('https') ? https : http;
-  const req = httpLib.request(url, options, (res) => {
+  const url: string = `${baseUrl}/api/webhook/${batteryWebHook}`;
+  const httpLib: typeof import('http') | typeof import('https') = url.toLowerCase().startsWith('https')
+    ? https
+    : http;
+  const req: ClientRequest = httpLib.request(url, options, (res) => {
     if (res.statusCode !== 200) {
       console.error(`Update device ${pageIndex} at ${url} status ${res.statusCode}: ${res.statusMessage}`);
     }
@@ -228,23 +279,24 @@ function sendBatteryLevelToHomeAssistant(pageIndex, batteryStore, batteryWebHook
   req.end();
 }
 
-async function renderUrlToImageAsync(browser, pageConfig, url, path) {
-  let page;
+async function renderUrlToImageAsync(
+  browser: Browser,
+  { prefersColorScheme, renderingScreenSize, rotation, scaling, renderingDelay, imageFormat }: IPageConfig,
+  url: string,
+  path: string
+): Promise<void> {
+  let page: Page | undefined;
   try {
     page = await browser.newPage();
     await page.emulateMediaFeatures([
       {
         name: 'prefers-color-scheme',
-        value: `${pageConfig.prefersColorScheme}`
+        value: `${prefersColorScheme}`
       }
     ]);
 
-    let size = {
-      width: Number(pageConfig.renderingScreenSize.width),
-      height: Number(pageConfig.renderingScreenSize.height)
-    };
-
-    if (pageConfig.rotation % 180 > 0) {
+    let size: { width: number; height: number } = renderingScreenSize;
+    if (rotation % 180 > 0) {
       size = {
         width: size.height,
         height: size.width
@@ -252,31 +304,32 @@ async function renderUrlToImageAsync(browser, pageConfig, url, path) {
     }
 
     await page.setViewport(size);
-    const startTime = new Date().valueOf();
+    const startTime: number = Date.now();
     await page.goto(url, {
       waitUntil: ['domcontentloaded', 'load', 'networkidle0'],
-      timeout: config.renderingTimeout
+      timeout: renderingTimeout
     });
 
-    const navigateTimespan = new Date().valueOf() - startTime;
+    const navigateTimespan: number = Date.now() - startTime;
     await page.waitForSelector('home-assistant', {
-      timeout: Math.max(config.renderingTimeout - navigateTimespan, 1000)
+      timeout: Math.max(renderingTimeout - navigateTimespan, 1000)
     });
 
     await page.addStyleTag({
       content: `
         body {
-          zoom: ${pageConfig.scaling * 100}%;
+          zoom: ${scaling * 100}%;
           overflow: hidden;
         }`
     });
 
-    if (pageConfig.renderingDelay > 0) {
-      await page.waitForTimeout(pageConfig.renderingDelay);
+    if (renderingDelay > 0) {
+      await page.waitForTimeout(renderingDelay);
     }
+
     await page.screenshot({
       path,
-      type: pageConfig.imageFormat,
+      type: imageFormat,
       captureBeyondViewport: false,
       clip: {
         x: 0,
@@ -287,26 +340,48 @@ async function renderUrlToImageAsync(browser, pageConfig, url, path) {
   } catch (e) {
     console.error('Failed to render', e);
   } finally {
-    if (config.debug === false) {
-      await page.close();
+    if (debug === false) {
+      await page?.close();
     }
   }
 }
 
-function convertImageToKindleCompatiblePngAsync(pageConfig, inputPath, outputPath) {
-  return new Promise((resolve, reject) => {
+async function convertImageToKindleCompatiblePngAsync(
+  { removeGamma, dither, rotation, colorMode, blackLevel, whiteLevel, grayscaleDepth }: IPageConfig,
+  inputPath: string,
+  outputPath: string
+): Promise<void> {
+  type GM = typeof import('gm');
+  interface IExtendedGM extends GM {
+    (input: string): IExtendedGMState;
+  }
+
+  type GMState = ReturnType<GM>;
+
+  interface IExtendedGMState extends GMState {
+    options(options: { imageMagick: boolean }): IExtendedGMState;
+    gamma(value: number): IExtendedGMState;
+    dither(enabled: boolean): IExtendedGMState;
+    rotate(color: string, degrees: number): IExtendedGMState;
+    type(colorMode: string): IExtendedGMState;
+    level(black: string | number, white: string | number): IExtendedGMState;
+  }
+
+  const gm: IExtendedGM = (await import('gm')) as unknown as IExtendedGM;
+
+  await new Promise<void>((resolve, reject) => {
     gm(inputPath)
       .options({
-        imageMagick: config.useImageMagick === true
+        imageMagick: useImageMagick === true
       })
-      .gamma(pageConfig.removeGamma ? 1.0 / 2.2 : 1.0)
-      .dither(pageConfig.dither)
-      .rotate('white', pageConfig.rotation)
-      .type(pageConfig.colorMode)
-      .level(pageConfig.blackLevel, pageConfig.whiteLevel)
-      .bitdepth(pageConfig.grayscaleDepth)
+      .gamma(removeGamma ? 1.0 / 2.2 : 1.0)
+      .dither(dither)
+      .rotate('white', rotation)
+      .type(colorMode)
+      .level(blackLevel, whiteLevel)
+      .bitdepth(grayscaleDepth)
       .quality(100)
-      .write(outputPath, (err) => {
+      .write(outputPath, (err: Error | null) => {
         if (err) {
           reject(err);
         } else {

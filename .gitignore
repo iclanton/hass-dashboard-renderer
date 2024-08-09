@@ -5,3 +5,8 @@ docker-compose.*.yml
 cover.png
 .devcontainer/
 .DS_Store
+lib/
+lib-*/
+temp/
+.cache/
+.heft/
