@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- Refactor the codebase to TypeScript and render in-memory when `EAGER_RERENDER` is set.
+
 ## 1.2.0
 
 - When `EAGER_RERENDER` is set, don't do the initial render or enable the cronjob.
