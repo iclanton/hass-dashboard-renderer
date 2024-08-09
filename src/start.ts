@@ -53,7 +53,7 @@ declare const localStorage: { setItem(key: string, value: string): void };
     args: puppeteerArgs,
     defaultViewport: null,
     timeout: browserLaunchTimeout,
-    headless: debug
+    headless: !debug
   });
 
   console.log(`Visiting '${baseUrl}' to login...`);
