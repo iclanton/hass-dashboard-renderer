@@ -105,10 +105,10 @@ function getPagesConfig(): IPageConfig[] {
         ? undefined
         : {
             grayscaleDepth: getNumberEnvironmentVariableForPage('GRAYSCALE_DEPTH', suffix) ?? 8,
-            removeGamma: getEnvironmentVariableForPage('REMOVE_GAMMA', suffix) === 'true' ?? false,
+            removeGamma: getEnvironmentVariableForPage('REMOVE_GAMMA', suffix) === 'true',
             blackLevel: getEnvironmentVariableForPage('BLACK_LEVEL', suffix) ?? '0%',
             whiteLevel: getEnvironmentVariableForPage('WHITE_LEVEL', suffix) ?? '100%',
-            dither: getEnvironmentVariableForPage('DITHER', suffix) === 'true' ?? false,
+            dither: getEnvironmentVariableForPage('DITHER', suffix) === 'true',
             colorMode: getEnvironmentVariableForPage('COLOR_MODE', suffix) ?? 'GrayScale'
           };
 
