@@ -17,7 +17,8 @@ const {
   accessToken,
   language,
   eagerRender,
-  cronJob: cronTime,
+  longLivedPageMode,
+  cronTime,
   useImageMagick
 } = config;
 
@@ -31,6 +32,18 @@ const batteryStoreByPageIndex: Map<number, IBatteryStoreEntry> = new Map();
 
 // For puppeteer
 declare const localStorage: { setItem(key: string, value: string): void };
+
+function getPageUrl(pageConfig: IPageConfig): string {
+  const { screenShotUrl, includeCacheBreakQuery } = pageConfig;
+  let url: string = `${baseUrl}${screenShotUrl}`;
+  if (includeCacheBreakQuery) {
+    url += `?${Date.now()}`;
+  }
+
+  return url;
+}
+
+let longLivedPages: Page[] | undefined;
 
 (async () => {
   if (pages.length === 0) {
@@ -80,6 +93,18 @@ declare const localStorage: { setItem(key: string, value: string): void };
   );
 
   await page.close();
+
+  if (longLivedPageMode) {
+    console.log('Long-lived page mode enabled, creating pages...');
+    longLivedPages = [];
+    for (let i: number = 0; i < pages.length; i++) {
+      const pageConfig: IPageConfig = pages[i];
+      const page: Page = await getPageFromConfigAsync(browser, pageConfig);
+      longLivedPages.push(page);
+    }
+
+    console.log(`Created ${longLivedPages.length} long-lived pages.`);
+  }
 
   if (debug) {
     console.log('Debug mode active, will only render once in non-headless model and keep page open');
@@ -240,16 +265,13 @@ async function renderAndConvertPageAsync(
   pageConfig: IPageConfig,
   pageIndex: number
 ): Promise<Buffer | undefined> {
-  const { screenShotUrl, includeCacheBreakQuery, batteryWebHook, pageRenderingConfig } = pageConfig;
+  const { batteryWebHook, pageRenderingConfig } = pageConfig;
   const pageBatteryStore: IBatteryStoreEntry | undefined = batteryStoreByPageIndex.get(pageIndex);
+  const longLivedPage: Page | undefined = longLivedPages?.[pageIndex];
 
-  let url: string = `${baseUrl}${screenShotUrl}`;
-  if (includeCacheBreakQuery) {
-    url += `?${Date.now()}`;
-  }
-
+  const url: string = getPageUrl(pageConfig);
   console.log(`Rendering ${url} to image...`);
-  let image: Buffer | undefined = await renderUrlToImageAsync(browser, pageConfig, url);
+  let image: Buffer | undefined = await renderUrlToImageAsync(browser, pageConfig, longLivedPage);
   if (image) {
     if (pageRenderingConfig) {
       console.log(`Converting rendered screenshot of ${url} to grayscale...`);
@@ -296,20 +318,74 @@ function sendBatteryLevelToHomeAssistant(
   req.end();
 }
 
+async function getPageFromConfigAsync(browser: Browser, pageConfig: IPageConfig): Promise<Page> {
+  const { prefersColorScheme, renderingScreenSize, rotation, scaling, renderingDelay } = pageConfig;
+  const url: string = getPageUrl(pageConfig);
+  const page: Page = await browser.newPage();
+  await page.emulateMediaFeatures([
+    {
+      name: 'prefers-color-scheme',
+      value: `${prefersColorScheme}`
+    }
+  ]);
+
+  let size: { width: number; height: number } = renderingScreenSize;
+  if (rotation % 180 > 0) {
+    size = {
+      width: size.height,
+      height: size.width
+    };
+  }
+
+  await page.setViewport(size);
+  const startTime: number = Date.now();
+  await page.goto(url, {
+    waitUntil: ['domcontentloaded', 'load', 'networkidle0'],
+    timeout: renderingTimeout
+  });
+
+  const navigateTimespan: number = Date.now() - startTime;
+  await page.waitForSelector('home-assistant', {
+    timeout: Math.max(renderingTimeout - navigateTimespan, 1000)
+  });
+
+  await page.addStyleTag({
+    content: `
+        body {
+          zoom: ${scaling * 100}%;
+          overflow: hidden;
+        }`
+  });
+
+  if (renderingDelay > 0) {
+    await page.waitForTimeout(renderingDelay);
+  }
+
+  return page;
+}
+
 async function renderUrlToImageAsync(
   browser: Browser,
-  { prefersColorScheme, renderingScreenSize, rotation, scaling, renderingDelay, imageFormat }: IPageConfig,
-  url: string
+  pageConfig: IPageConfig,
+  longLivedPage: Page | undefined
 ): Promise<Buffer | undefined> {
+  const { renderingScreenSize, rotation, imageFormat } = pageConfig;
   let page: Page | undefined;
   try {
-    page = await browser.newPage();
-    await page.emulateMediaFeatures([
-      {
-        name: 'prefers-color-scheme',
-        value: `${prefersColorScheme}`
+    if (longLivedPage) {
+      const longLivedPageUrl: string = longLivedPage.url();
+      if (longLivedPage.isClosed()) {
+        console.error(`Long-lived page for ${longLivedPageUrl} is closed, recreating...`);
+        page = await getPageFromConfigAsync(browser, pageConfig);
+      } else {
+        console.log(`Using long-lived page for ${longLivedPageUrl}`);
+        page = longLivedPage;
       }
-    ]);
+    } else {
+      page = await getPageFromConfigAsync(browser, pageConfig);
+    }
+
+    await page.bringToFront();
 
     let size: { width: number; height: number } = renderingScreenSize;
     if (rotation % 180 > 0) {
@@ -317,30 +393,6 @@ async function renderUrlToImageAsync(
         width: size.height,
         height: size.width
       };
-    }
-
-    await page.setViewport(size);
-    const startTime: number = Date.now();
-    await page.goto(url, {
-      waitUntil: ['domcontentloaded', 'load', 'networkidle0'],
-      timeout: renderingTimeout
-    });
-
-    const navigateTimespan: number = Date.now() - startTime;
-    await page.waitForSelector('home-assistant', {
-      timeout: Math.max(renderingTimeout - navigateTimespan, 1000)
-    });
-
-    await page.addStyleTag({
-      content: `
-        body {
-          zoom: ${scaling * 100}%;
-          overflow: hidden;
-        }`
-    });
-
-    if (renderingDelay > 0) {
-      await page.waitForTimeout(renderingDelay);
     }
 
     return (await page.screenshot({
@@ -356,7 +408,7 @@ async function renderUrlToImageAsync(
   } catch (e) {
     console.error('Failed to render', e);
   } finally {
-    if (debug === false) {
+    if (debug === false && !longLivedPage) {
       await page?.close();
     }
   }

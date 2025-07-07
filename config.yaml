@@ -43,6 +43,7 @@ options:
   PREFERS_COLOR_SCHEME: 'light'
   HA_BATTERY_WEBHOOK: ''
   EAGER_RERENDER: false
+  LONG_LIVED_PAGE_MODE: false
   ADDITIONAL_ENV_VARS: []
 schema:
   HA_BASE_URL: 'url'

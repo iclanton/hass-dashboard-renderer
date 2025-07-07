@@ -137,8 +137,9 @@ function getPagesConfig(): IPageConfig[] {
 export interface IConfig {
   baseUrl: string;
   accessToken: string;
-  cronJob: string;
+  cronTime: string;
   eagerRender: boolean;
+  longLivedPageMode: boolean;
   useImageMagick: boolean;
   pages: IPageConfig[];
   port: number;
@@ -152,8 +153,9 @@ export interface IConfig {
 const config: IConfig = {
   baseUrl: getEnvironmentVariable('HA_BASE_URL', true),
   accessToken: getEnvironmentVariable('HA_ACCESS_TOKEN', true),
-  cronJob: getEnvironmentVariable('CRON_JOB') ?? '* * * * *',
+  cronTime: getEnvironmentVariable('CRON_JOB') ?? '* * * * *',
   eagerRender: getEnvironmentVariable('EAGER_RERENDER') === 'true',
+  longLivedPageMode: getEnvironmentVariable('LONG_LIVED_PAGE_MODE') === 'true',
   useImageMagick: getEnvironmentVariable('USE_IMAGE_MAGICK') === 'true',
   pages: getPagesConfig(),
   port: getNumberEnvironmentVariable('PORT') ?? 5000,

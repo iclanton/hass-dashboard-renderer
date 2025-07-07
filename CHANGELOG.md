@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+
+- Add experimental support for long-lived page mode by introducing a `LONG_LIVED_PAGE_MODE` option.
+
 ## 1.4.1
 
 - Remove an incorrect logging statement when `LEAVE_IMAGE_UNMODIFIED` is set.
