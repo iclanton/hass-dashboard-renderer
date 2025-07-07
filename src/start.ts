@@ -321,6 +321,7 @@ function sendBatteryLevelToHomeAssistant(
 async function getPageFromConfigAsync(browser: Browser, pageConfig: IPageConfig): Promise<Page> {
   const { prefersColorScheme, renderingScreenSize, rotation, scaling, renderingDelay } = pageConfig;
   const url: string = getPageUrl(pageConfig);
+  console.log(`Creating page for ${url}...`);
   const page: Page = await browser.newPage();
   await page.emulateMediaFeatures([
     {
@@ -344,10 +345,16 @@ async function getPageFromConfigAsync(browser: Browser, pageConfig: IPageConfig)
     timeout: renderingTimeout
   });
 
-  const navigateTimespan: number = Date.now() - startTime;
+  const navigateTimeSpan: number = Date.now() - startTime;
+  console.log(`Page ${url} loaded in ${navigateTimeSpan}ms`);
+
+  const selectorWaitTimeout: number = Math.max(renderingTimeout - navigateTimeSpan, 1000);
+  console.log(`Waiting for Home Assistant to render with timeout ${selectorWaitTimeout}ms...`);
   await page.waitForSelector('home-assistant', {
-    timeout: Math.max(renderingTimeout - navigateTimespan, 1000)
+    timeout: selectorWaitTimeout
   });
+
+  console.log(`Page ${url} rendered`);
 
   await page.addStyleTag({
     content: `
@@ -358,6 +365,7 @@ async function getPageFromConfigAsync(browser: Browser, pageConfig: IPageConfig)
   });
 
   if (renderingDelay > 0) {
+    console.log(`Waiting for ${renderingDelay}ms before taking screenshot...`);
     await page.waitForTimeout(renderingDelay);
   }
 
