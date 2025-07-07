@@ -1,6 +1,6 @@
 {
   "name": "hass-dashboard-renderer",
-  "version": "1.5.0",
+  "version": "1.5.2",
   "description": "",
   "scripts": {
     "build": "heft build --clean",

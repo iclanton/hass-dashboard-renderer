@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0
+## 1.5.2
 
 - Add experimental support for long-lived page mode by introducing a `LONG_LIVED_PAGE_MODE` option.
 
