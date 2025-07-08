@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.3
+## 1.5.4
 
 - More logging and don't wait for network idle when loading the page.
 
