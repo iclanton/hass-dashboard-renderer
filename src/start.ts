@@ -354,7 +354,7 @@ async function getPageFromConfigAsync(browser: Browser, pageConfig: IPageConfig)
     timeout: selectorWaitTimeout
   });
 
-  console.log(`Page ${url} rendered`);
+  console.log(`Page ${url} rendered in ${Date.now() - startTime}ms`);
 
   await page.addStyleTag({
     content: `
