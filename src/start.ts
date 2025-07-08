@@ -341,7 +341,7 @@ async function getPageFromConfigAsync(browser: Browser, pageConfig: IPageConfig)
   await page.setViewport(size);
   const startTime: number = Date.now();
   await page.goto(url, {
-    waitUntil: ['domcontentloaded', 'load', 'networkidle0'],
+    waitUntil: ['domcontentloaded', 'load'],
     timeout: renderingTimeout
   });
 
