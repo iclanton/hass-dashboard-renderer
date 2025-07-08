@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.3
+
+- More logging and don't wait for network idle when loading the page.
+
 ## 1.5.2
 
 - Add experimental support for long-lived page mode by introducing a `LONG_LIVED_PAGE_MODE` option.
