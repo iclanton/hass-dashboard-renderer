@@ -1,5 +1,5 @@
-name: Dashboard Image Renderer
-version: 1.7.1
+name: Dashboard Image Renderer (Local)
+version: 0.1.12
 slug: dashboard-image-renderer
 description: This addon renders an image of a Home Assistant Lovelace dashboard and serves it over HTTP.
 startup: application
@@ -9,7 +9,6 @@ arch:
   - amd64
   - armv7
 url: 'https://github.com/iclanton/hass-dashboard-renderer'
-image: 'iclanton/hass-dashboard-renderer-ha-addon-{arch}'
 webui: 'http://[HOST]:[PORT:5000]'
 ingress: true
 ingress_port: 5000
