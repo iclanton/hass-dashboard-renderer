@@ -63,7 +63,7 @@ schema:
   SCALING: 'float?'
   GRAYSCALE_DEPTH: 'int?'
   IMAGE_FORMAT: 'list(png|jpeg)?'
-  COLOR_MODE: 'list(GrayScale|TrueColor)?'
+  COLOR_MODE: 'list(GrayScale|TrueColor|SevenColor)?'
   REMOVE_GAMMA: 'bool?'
   PREFERS_COLOR_SCHEME: 'list(light|dark)?'
   HA_BATTERY_WEBHOOK: 'str?'

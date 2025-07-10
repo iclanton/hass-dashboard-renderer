@@ -70,7 +70,7 @@ export interface IPageRenderingConfig {
   blackLevel: string;
   whiteLevel: string;
   dither: boolean;
-  colorMode: 'GrayScale' | 'TrueColor';
+  colorMode: 'GrayScale' | 'TrueColor' | 'SevenColor';
 }
 
 export interface IPageConfig {

@@ -14,6 +14,7 @@ const LEVEL_ARG_NAME: string = '-level';
 const DEPTH_ARG_NAME: string = '-depth';
 const QUALITY_ARGS: string[] = ['-quality', '100'];
 const STDIN_ARG_NAME: string = '-';
+const SEVEN_COLOR_REMAP_ARGS: string[] = ['-remap', `${__dirname}/palettes/7-color.png`];
 
 const REMOVED_GAMMA_VALUE: number = 1.0 / 2.2;
 
@@ -27,9 +28,11 @@ export async function convertImageAsync(
   const { rotation, imageFormat } = pageConfig;
   const { removeGamma, dither, colorMode, blackLevel, whiteLevel, grayscaleDepth } = renderingConfig;
 
+  const normalizedColorMode: string = colorMode === 'SevenColor' ? 'TrueColor' : colorMode;
+
   // prettier-ignore
   const imageMagickArgs: string[] = [
-    TYPE_ARG_NAME, colorMode,
+    TYPE_ARG_NAME, normalizedColorMode,
     ...QUALITY_ARGS,
     STDIN_ARG_NAME,
     GAMMA_ARG_NAME, removeGamma ? `${REMOVED_GAMMA_VALUE},${REMOVED_GAMMA_VALUE},${REMOVED_GAMMA_VALUE}`:'1,1,1',
@@ -38,6 +41,7 @@ export async function convertImageAsync(
     ROTATE_ARG_NAME, String(rotation),
     LEVEL_ARG_NAME, `${blackLevel},${whiteLevel}`,
     DEPTH_ARG_NAME, String(grayscaleDepth),
+    ...(colorMode === 'SevenColor' ? SEVEN_COLOR_REMAP_ARGS : []),
     `${imageFormat}:-`
   ];
 
