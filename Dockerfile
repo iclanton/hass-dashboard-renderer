@@ -21,7 +21,7 @@ COPY local.conf /etc/fonts/local.conf
 
 RUN npm ci
 
-COPY ./lib/*.js ./lib/
+COPY ./lib/** ./lib/
 
 EXPOSE 5000
 
