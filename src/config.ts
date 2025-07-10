@@ -140,7 +140,6 @@ export interface IConfig {
   cronTime: string;
   eagerRender: boolean;
   longLivedPageMode: boolean;
-  useImageMagick: boolean;
   pages: IPageConfig[];
   port: number;
   renderingTimeout: number;
@@ -156,7 +155,6 @@ const config: IConfig = {
   cronTime: getEnvironmentVariable('CRON_JOB') ?? '* * * * *',
   eagerRender: getEnvironmentVariable('EAGER_RERENDER') === 'true',
   longLivedPageMode: getEnvironmentVariable('LONG_LIVED_PAGE_MODE') === 'true',
-  useImageMagick: getEnvironmentVariable('USE_IMAGE_MAGICK') === 'true',
   pages: getPagesConfig(),
   port: getNumberEnvironmentVariable('PORT') ?? 5000,
   renderingTimeout: getNumberEnvironmentVariable('RENDERING_TIMEOUT') ?? 10000,

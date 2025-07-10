@@ -17,8 +17,7 @@ RUN apk add --no-cache \
     npm
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
-    USE_IMAGE_MAGICK=true
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 COPY package*.json ./
 COPY local.conf /etc/fonts/local.conf

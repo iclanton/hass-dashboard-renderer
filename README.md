@@ -112,5 +112,4 @@ Some advanced variables for local usage which shouldn't be necessary when using 
 
 - `OUTPUT_PATH=./output` (destination of rendered image, without extension. `OUTPUT_2`, `OUTPUT_3`, ... is also supported)
 - `PORT=5000` (port of server, which returns the last image)
-- `USE_IMAGE_MAGICK=false` (use ImageMagick instead of GraphicsMagick)
 - `UNSAFE_IGNORE_CERTIFICATE_ERRORS=true` (ignore certificate errors of e.g. self-signed certificates at your own risk)

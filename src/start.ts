@@ -5,7 +5,8 @@ import https, { type RequestOptions } from 'node:https';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
 import { FileSystem } from '@rushstack/node-core-library';
 
-import config, { type IPageRenderingConfig, type IPageConfig } from './config';
+import config, { type IPageConfig } from './config';
+import { convertImageAsync } from './imageConvert';
 
 const {
   pages,
@@ -19,8 +20,7 @@ const {
   language,
   eagerRender,
   longLivedPageMode,
-  cronTime,
-  useImageMagick
+  cronTime
 } = config;
 
 interface IBatteryStoreEntry {
@@ -275,7 +275,7 @@ async function renderAndConvertPageAsync(
   if (image) {
     if (pageRenderingConfig) {
       console.log(`Converting rendered screenshot of ${url} to grayscale...`);
-      image = await convertImageToKindleCompatiblePngAsync(image, pageConfig, pageRenderingConfig);
+      image = await convertImageAsync(image, pageConfig, pageRenderingConfig);
     }
 
     console.log(`Finished ${url}`);
@@ -420,49 +420,4 @@ async function renderUrlToImageAsync(
       await page?.close();
     }
   }
-}
-
-async function convertImageToKindleCompatiblePngAsync(
-  imageData: Buffer,
-  { rotation, imageFormat }: IPageConfig,
-  { removeGamma, dither, colorMode, blackLevel, whiteLevel, grayscaleDepth }: IPageRenderingConfig
-): Promise<Buffer> {
-  type GM = typeof import('gm');
-  interface IExtendedGM extends GM {
-    (input: string | Buffer): IExtendedGMState;
-  }
-
-  type GMState = ReturnType<GM>;
-
-  interface IExtendedGMState extends GMState {
-    options(options: { imageMagick: boolean }): IExtendedGMState;
-    gamma(value: number): IExtendedGMState;
-    dither(enabled: boolean): IExtendedGMState;
-    rotate(color: string, degrees: number): IExtendedGMState;
-    type(colorMode: string): IExtendedGMState;
-    level(black: string | number, white: string | number): IExtendedGMState;
-  }
-
-  const gm: IExtendedGM = (await import('gm')).default as IExtendedGM;
-
-  return await new Promise((resolve, reject) => {
-    gm(imageData)
-      .options({
-        imageMagick: useImageMagick === true
-      })
-      .gamma(removeGamma ? 1.0 / 2.2 : 1.0)
-      .dither(dither)
-      .rotate('white', rotation)
-      .type(colorMode)
-      .level(blackLevel, whiteLevel)
-      .bitdepth(grayscaleDepth)
-      .quality(100)
-      .toBuffer(imageFormat, (err: Error | null, buffer: Buffer) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(buffer);
-        }
-      });
-  });
 }
