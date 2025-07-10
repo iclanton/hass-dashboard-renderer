@@ -1,8 +1,9 @@
-import path from 'path';
-import http, { type ClientRequest } from 'http';
-import https, { type RequestOptions } from 'https';
-import fsExtra from 'fs-extra';
+import path from 'node:path';
+import http, { type ClientRequest } from 'node:http';
+import https, { type RequestOptions } from 'node:https';
+
 import puppeteer, { type Browser, type Page } from 'puppeteer';
+import { FileSystem } from '@rushstack/node-core-library';
 
 import config, { type IPageRenderingConfig, type IPageConfig } from './config';
 
@@ -115,9 +116,9 @@ let longLivedPages: Page[] | undefined;
       for (let pageIndex: number = 0; pageIndex < pages.length; pageIndex++) {
         const { outputPath } = pages[pageIndex];
         try {
-          await fsExtra.rm(path.dirname(outputPath), { recursive: true });
+          await FileSystem.deleteFolderAsync(path.dirname(outputPath));
         } catch (e) {
-          if (e.code !== 'ENOENT') {
+          if (!FileSystem.isNotExistError(e)) {
             console.error(`Failed to delete ${outputPath}: ${e}`);
           }
         }
@@ -185,8 +186,8 @@ let longLivedPages: Page[] | undefined;
         } else {
           const outputPathWithExtension: string = `${outputPath}.${imageFormat}`;
           const [data, stat] = await Promise.all([
-            fsExtra.readFile(outputPathWithExtension),
-            fsExtra.stat(outputPathWithExtension)
+            FileSystem.readFileToBufferAsync(outputPathWithExtension),
+            FileSystem.getStatisticsAsync(outputPathWithExtension)
           ]);
           imageData = data;
           lastModifiedTime = new Date(stat.mtime).toUTCString();
@@ -250,9 +251,8 @@ async function renderAndConvertAsync(browser: Browser): Promise<void> {
     if (!eagerRender) {
       if (image) {
         const { outputPath: configOutputPath, imageFormat } = pageConfig;
-        await fsExtra.ensureDir(path.dirname(configOutputPath));
         const outputPath: string = `${configOutputPath}.${imageFormat}`;
-        await fsExtra.writeFile(outputPath, image);
+        await FileSystem.writeFileAsync(outputPath, image, { ensureFolderExists: true });
       } else {
         console.log(`Failed to render page ${pageIndex + 1}. Falling back to existing image, if one exists.`);
       }

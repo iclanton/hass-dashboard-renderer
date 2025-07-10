@@ -9,16 +9,15 @@
   "author": "iclanton",
   "license": "MIT",
   "dependencies": {
+    "@rushstack/node-core-library": "^5.13.1",
     "cron": "^1.8.2",
-    "fs-extra": "^11.2.0",
     "gm": "^1.25.0",
     "puppeteer": "^11.0.0"
   },
   "devDependencies": {
-    "@rushstack/heft-node-rig": "^2.9.0",
     "@rushstack/heft": "^0.74.0",
+    "@rushstack/heft-node-rig": "^2.9.0",
     "@types/cron": "^1.7.3",
-    "@types/fs-extra": "^11.0.4",
     "@types/gm": "^1.25.4",
     "@types/node": "22.16.0"
   }
