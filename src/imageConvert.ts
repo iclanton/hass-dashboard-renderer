@@ -92,5 +92,9 @@ export async function convertImageAsync(
     throw new Error(`ImageMagick process was killed by signal: ${signal}. Stderr: ${stderr.toString()}`);
   }
 
+  if (stderr.length > 0) {
+    console.warn(`ImageMagick process produced stderr output: ${stderr.toString()}`);
+  }
+
   return stdout;
 }
