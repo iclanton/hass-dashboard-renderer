@@ -21,7 +21,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 COPY package*.json ./
 COPY local.conf /etc/fonts/local.conf
-COPY ./lib/** ./lib/
+COPY ./lib/ ./lib/
 
 RUN npm ci
 
