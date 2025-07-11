@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0
+
+- Fix an issue with the login page not loading.
+- Directly call ImageMagick instead of using the `gm` package
+- Add a seven-color color mode for seven-color ePaper displays.
+
 ## 1.5.4
 
 - More logging and don't wait for network idle when loading the page.
