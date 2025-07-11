@@ -74,6 +74,7 @@ let longLivedPages: Page[] | undefined;
   console.log(`Visiting '${baseUrl}' to login...`);
   const page: Page = await browser.newPage();
   await page.goto(baseUrl, {
+    waitUntil: ['domcontentloaded', 'load', 'networkidle0'],
     timeout: renderingTimeout
   });
 
