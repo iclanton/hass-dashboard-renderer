@@ -3,7 +3,7 @@ import { Async, Executable, type IWaitForExitResult } from '@rushstack/node-core
 
 import type { IPageConfig, IPageRenderingConfig } from './config';
 
-const IMAGEMAGICK_BIN_NAME: string = 'convert';
+const IMAGEMAGICK_BIN_NAME: string = 'magick';
 const GAMMA_ARG_NAME: string = '-gamma';
 const DITHER_ARGS: string[] = ['-dither', 'FloydSteinberg'];
 const NO_DITHER_ARGS: string[] = ['+dither'];
