@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1
+
+- Fix an issue with BMP encoding to better support rendering for ESPHome devices.
+
 ## 1.7.0
 
 - Add support for `bmp` image format.
