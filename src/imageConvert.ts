@@ -28,21 +28,22 @@ export async function convertImageAsync(
   const { rotation, imageFormat } = pageConfig;
   const { removeGamma, dither, colorMode, blackLevel, whiteLevel, grayscaleDepth } = renderingConfig;
 
-  const normalizedColorMode: string = colorMode === 'SevenColor' ? 'TrueColor' : colorMode;
+  const normalizedColorMode: string = colorMode === 'SevenColor' ? 'truecolor' : colorMode.toLowerCase();
+  const normalizedFormat: string = imageFormat === 'bmp' ? 'bmp3' : imageFormat;
 
   // prettier-ignore
   const imageMagickArgs: string[] = [
-    TYPE_ARG_NAME, normalizedColorMode,
     ...QUALITY_ARGS,
     STDIN_ARG_NAME,
-    GAMMA_ARG_NAME, removeGamma ? `${REMOVED_GAMMA_VALUE},${REMOVED_GAMMA_VALUE},${REMOVED_GAMMA_VALUE}`:'1,1,1',
+    GAMMA_ARG_NAME, removeGamma ? `${REMOVED_GAMMA_VALUE},${REMOVED_GAMMA_VALUE},${REMOVED_GAMMA_VALUE}` : '1,1,1',
     ...(dither ? DITHER_ARGS : NO_DITHER_ARGS),
     ...BACKGROUND_COLOR_ARGS,
     ROTATE_ARG_NAME, String(rotation),
     LEVEL_ARG_NAME, `${blackLevel},${whiteLevel}`,
-    DEPTH_ARG_NAME, String(grayscaleDepth),
+    ...(grayscaleDepth !== -1 ? [DEPTH_ARG_NAME, String(grayscaleDepth)] : []),
     ...(colorMode === 'SevenColor' ? SEVEN_COLOR_REMAP_ARGS : []),
-    `${imageFormat}:-`
+    TYPE_ARG_NAME, normalizedColorMode,
+    `${normalizedFormat}:-`
   ];
 
   const imageMagickProcess: ChildProcess = Executable.spawn(IMAGEMAGICK_BIN_NAME, imageMagickArgs);
