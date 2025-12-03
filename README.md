@@ -12,7 +12,7 @@ If you're looking for a way to render your own HTML, see my other project [hass-
 
 ## Features
 
-This tool regularly takes a screenshot of a specific page of your home assistant setup. It converts it into the PNG/JPEG grayscale format which Kindles can display.
+This tool regularly takes a screenshot of a specific page of your home assistant setup. It converts it into the PNG/JPEG/BMP grayscale format which Kindles can display.
 
 Using my [own Kindle 4 setup guide](https://github.com/sibbl/hass-lovelace-kindle-4) or the [online screensaver extension](https://www.mobileread.com/forums/showthread.php?t=236104) for any jailbroken Kindle, this image can be regularly polled from your device so you can use it as a weather station, a display for next public transport departures etc.
 
@@ -47,7 +47,7 @@ Home Assistant related stuff:
 | `SCALING`                 | `1`                                   | no       | yes      | Scaling factor, e.g. `1.5` to zoom in or `0.75` to zoom out                                                                                                                                          |
 | `GRAYSCALE_DEPTH`         | `8`                                   | no       | yes      | Grayscale bit depth your kindle supports                                                                                                                                                             |
 | `COLOR_MODE`              | `GrayScale`                           | no       | yes      | ColorMode to use, ex: `GrayScale`, `TrueColor`, or `SevenColor` (for use with the WaveShare 7-color ePaper display module).                                                                          |
-| `IMAGE_FORMAT`            | `png`                                 | no       | no       | Format for the generated images. Acceptable values are `png` or `jpeg`.                                                                                                                              |
+| `IMAGE_FORMAT`            | `png`                                 | no       | no       | Format for the generated images. Acceptable values are `png`, `jpeg`, or `bmp`.                                                                                                                      |
 | `DITHER`                  | `false`                               | no       | yes      | Apply a dither to the images.                                                                                                                                                                        |
 | `REMOVE_GAMMA`            | `true`                                | no       | no       | Remove gamma correction from image. Computer images are normally gamma corrected since monitors expect gamma corrected data, however some E-Ink displays expect images not to have gamma correction. |
 

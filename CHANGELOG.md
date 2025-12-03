@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0
+
+- Add support for `bmp` image format.
+
 ## 1.6.0
 
 - Fix an issue with the login page not loading.

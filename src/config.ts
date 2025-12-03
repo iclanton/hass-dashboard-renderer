@@ -76,7 +76,7 @@ export interface IPageRenderingConfig {
 export interface IPageConfig {
   screenShotUrl: string;
   includeCacheBreakQuery: boolean;
-  imageFormat: 'png' | 'jpeg';
+  imageFormat: 'png' | 'jpeg' | 'bmp';
   outputPath: string;
   renderingDelay: number;
   renderingScreenSize: {

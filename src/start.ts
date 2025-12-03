@@ -266,7 +266,7 @@ async function renderAndConvertPageAsync(
   pageConfig: IPageConfig,
   pageIndex: number
 ): Promise<Buffer | undefined> {
-  const { batteryWebHook, pageRenderingConfig } = pageConfig;
+  const { batteryWebHook, pageRenderingConfig, imageFormat } = pageConfig;
   const pageBatteryStore: IBatteryStoreEntry | undefined = batteryStoreByPageIndex.get(pageIndex);
   const longLivedPage: Page | undefined = longLivedPages?.[pageIndex];
 
@@ -277,6 +277,16 @@ async function renderAndConvertPageAsync(
     if (pageRenderingConfig) {
       console.log(`Converting rendered screenshot of ${url} to grayscale...`);
       image = await convertImageAsync(image, pageConfig, pageRenderingConfig);
+    } else if (imageFormat === 'bmp') {
+      console.log(`Converting rendered screenshot of ${url} to BMP format...`);
+      image = await convertImageAsync(image, pageConfig, {
+        grayscaleDepth: 24,
+        removeGamma: false,
+        blackLevel: '0',
+        whiteLevel: '100',
+        dither: false,
+        colorMode: 'TrueColor'
+      });
     }
 
     console.log(`Finished ${url}`);
@@ -405,7 +415,7 @@ async function renderUrlToImageAsync(
     }
 
     return (await page.screenshot({
-      type: imageFormat,
+      type: imageFormat === 'bmp' ? 'png' : imageFormat,
       captureBeyondViewport: false,
       clip: {
         x: 0,
